@@ -1,7 +1,7 @@
 " File : EasyHtml.vim
 " Last Change: 2002 Feb 18
 " Maintainer: Gontran BAERTS <gbcreation@free.fr>
-" Version: 0.5
+" Version: 0.5.1
 "
 " Please don't hesitate to correct my english :)
 " Send corrections to <gbcreation@free.fr>
@@ -58,8 +58,15 @@
 " Set g:eh_atfirstplace to 0 (default) or 1 to indicate if attributes must be
 " added at the end or at the beginning of the tag.
 "
+" Useful mappings :
+"   . d<F2> : delete tag before/under cursor
+"   . d<F3> : delete attribute before/under cursor
+"
 "-----------------------------------------------------------------------------
 " Updates:
+" in version 0.5.1
+" - No longer use of the modifiable option.
+" 
 " in version 0.5
 " - Now use liblist.vim script to handle lists and genutils.vim script to
 "   handle windows (Thanks to Hari Krishna Dara for this script).
@@ -84,6 +91,9 @@
 "     Hitting <F3> key works while cursor is at '=' or '"' signs.
 "   . CSS properties : background-color:;
 "     Hitting <F4> key works while cursor is at ':' or ';' signs.
+" - New mappings :
+"   . d<F2> : delete tag before/under cursor
+"   . d<F3> : delete attribute before/under cursor
 " - New g:eh_atfirstplace variable. See Usage section above.
 " - Fix modifiable setting again
 " - Fix syntax error for the "frame" attribute of <table> tag which causes
@@ -494,7 +504,7 @@ fu! LaunchEasyHtml( pat )
 		let &spr = savesplitright
 		" Turn off the swapfile, set the buffer type so that it won't get
 		" written, and so that it will get deleted when it gets hidden.
-		setl modifiable
+		"setl modifiable
 		setl noswapfile
 		setl buftype=nowrite
 		setl bufhidden=delete
@@ -553,7 +563,7 @@ fu! LaunchEasyHtml( pat )
 	" Fill attributs list
 	cal s:ShowAttributes()
 	" User don't need to modify content
-	setl nomodifiable
+	"setl nomodifiable
 endf
 
 "**
@@ -644,7 +654,7 @@ fu! s:ShowAttributes()
 	let oldRep=&report
 	let save_sc = &sc
 	set report=10000 nosc
-	setl modifiable
+	"setl modifiable
 	" Erase content
 	%delete
 	" Put content of register f after the cursor
@@ -654,7 +664,7 @@ fu! s:ShowAttributes()
 	d
 	" Move to first item
 	cal s:MoveSelect(1)
-	setl nomodifiable
+	"setl nomodifiable
 
 	" Restore config
 	let &report=oldRep
@@ -720,7 +730,7 @@ fu! s:MoveSelect( newLineNumber )
 	if( a:newLineNumber < 1 || a:newLineNumber > line("$") )
 		retu
 	en
-	setl modifiable
+	"setl modifiable
 	" Restore current line
 	if( exists("s:currentLine") )
 		cal setline( ".", s:currentLine )
@@ -747,7 +757,7 @@ fu! s:MoveSelect( newLineNumber )
 		let modifiedLine = substitute( modifiedLine, " $", ">", "" )
 	en
 	cal setline( ".", l:modifiedLine )
-	setl nomodifiable
+	"setl nomodifiable
 endf
 
 "**
@@ -787,7 +797,7 @@ fu! s:CloseWindow()
 	hi clear selectedAttribut
 	hi clear deprecatedAttribut
 	hi clear hiddenX
-	setl modifiable
+	"setl modifiable
 	winc p
 	if s:itemAdded == 0
 		exe s:eh_curLine
