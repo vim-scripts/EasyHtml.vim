@@ -1,15 +1,15 @@
 " File : EasyHtml.vim
 " Last Change: 2001 Nov 21
 " Maintainer: Gontran BAERTS <gbcreation@free.fr>
-" Version: 0.1
+" Version: 0.3
 "
 " Please don't hesitate to correct my english :)
 " Send corrections to <gbcreation@free.fr>
 "
 "-----------------------------------------------------------------------------
-" Description: With EasyHtml, you no longer need to look for tags attributs
-" while editing HTML files. EasyHtml let you select the right attribut by
-" showing you an attributs list for the tag under the cursor.
+" Description: With EasyHtml, you no longer need to look for tags attributes
+" while editing HTML files. EasyHtml let you select the right attribute by
+" showing you an attributes list for the tag under the cursor.
 "
 "-----------------------------------------------------------------------------
 " To Enable: Normally, this file will reside in your plugins directory and be
@@ -17,38 +17,44 @@
 " using :source EasyHtml.vim
 "
 "-----------------------------------------------------------------------------
-" Usage: To display the attributs list, move the cursor on the tag word and
-" hit <F3> key.
+" Usage: To display the attributes/values list, move the cursor on the
+" tag/attribute word and hit <F3> key.
 "
-" 	- h,j,k,l or <Left>,<Down>,<Up>,<Right> keys to change selected attribut.
-"	- <Home> or <C-Home> select the first attribut.
-"	- <End> or <C-End> select the last attribut.
-"	- <ENTER> add selected attribut to tag and exit from attributs list.
-"	- q or <ESC> to exit without adding selected attribut.
+" 	- h,j,k,l or <Left>,<Down>,<Up>,<Right> keys to change selected attribute.
+"	- <Home> or <C-Home> select the first attribute.
+"	- <End> or <C-End> select the last attribute.
+"	- <ENTER> add selected attribute to tag and exit from attributes list.
+"	- q or <ESC> to exit without adding selected attribute.
 "
-" Deprecated attributs as declared by W3C are red highlighted, while right
-" attributs are blue highlighted.
+" Deprecated attributes as declared by W3C are red highlighted, while right
+" attributes are blue highlighted.
 "
-" Set g:easyHtmlSplitRight variable to 0 or 1 to open attributs list at left
+" Set g:easyHtmlSplitRight variable to 0 or 1 to open attributes list at left
 " or right of current buffer. By defaut, use splitright setting.
 " 
 "-----------------------------------------------------------------------------
 " Updates:
+" in version 0.3
+"  - Attributes list updated
+"  - Don't display attributes list for closing tags
+"  - Now, display values list when hitting <F3> with cursor on attribute word
+"    (for some attributes only).
+"
 " in version 0.2.1
 " - Fix global modifiable setting instead of local
 "
 " in version 0.2
-" - Attributs list is now alphabetically sorted
-" - Hitting <F3> allows to display attributs list in Insert mode too
-" - Allows to select an attribut by incremental search :-)
-"   For example, with <body> tag, typing "onk" (normal mode) in the attributs
-"   list buffer automatically select "onkeydown" attribut. Use backspace
+" - Attributes list is now alphabetically sorted
+" - Hitting <F3> allows to display attributes list in Insert mode too
+" - Allows to select an attribute by incremental search :-)
+"   For example, with <body> tag, typing "onk" (normal mode) in the attributes
+"   list buffer automatically select "onkeydown" attribute. Use backspace
 "   (<BS>) to remove characters. This behavior is enable by setting
-"   g:eh_incsearch variable to 1. Warning : when incremental attribut search
+"   g:eh_incsearch variable to 1. Warning : when incremental attribute search
 "   is on, 'q', 'h', 'j', 'k' and 'l' keys aren't used to exit from list and
 "   to move highlighting. Use 'Q', '<Left>', '<Down>', '<Up>' and '<Right>'
 "   instead.
-" - Check for attributs list already opened, and reuse it
+" - Check for attributes list already opened, and reuse it
 "
 " in version 0.1
 " - First version
@@ -82,97 +88,126 @@ let s:events = "onclick=\"\" ondblclick=\"\" onmousedown=\"\" onmouseup=\"\" onm
 let s:cellhalign = "align=\"\" char=\"\" charoff=\"\""
 let s:cellvalign = "valign=\"\""
 let s:attrs = "%coreattrs %i18n %events"
-let s:HTMLTags = ",a %attrs charset=\"\" target=\"\" type=\"\" name=\"\" href=\"\" hreflang=\"\" rel=\"\" rev=\"\" accesskey=\"\" shape=\"\" coords=\"\" tabindex=\"\" onfocus=\"\" onblur=\"\""
-	\ . ",abbr %attrs"
-	\ . ",acronym %attrs"
-	\ . ",address %attrs"
-	\ . ",applet %coreattrs alt=\"\" align=\"\"-D hspace-D=\"\" vspace-D=\"\" codebase-D=\"\" code-D=\"\" name-D=\"\" archive-D=\"\" object-D=\"\" width-D=\"\" height-D=\"\""
-	\ . ",area %attrs shape=\"\" coords=\"\" usemap=\"\" nohref=\"\" name=\"\" alt=\"\" href=\"\" tabindex=\"\" accesskey=\"\" onfocus=\"\" onblur=\"\""
-	\ . ",b %attrs"
-	\ . ",base href=\"\" target=\"\""
-	\ . ",basefont %coreattrs %i18n size=\"\"-D color=\"\"-D face-D=\"\""
-	\ . ",bdo %coreattrs lang=\"\" dir=\"\""
-	\ . ",big %attrs"
-	\ . ",blockquote %attrs cite=\"\""
-	\ . ",body %attrs onload=\"\" onunload=\"\" background=\"\"-D bgcolor-D=\"\" text-D=\"\" link-D=\"\" vlink-D=\"\" alink-D=\"\""
-	\ . ",br %coreattrs clear=\"\""
-	\ . ",button %attrs name=\"\" value=\"\" type=\"\" disabled=\"\" tabindex=\"\" accesskey=\"\" onfocus=\"\" onblur=\"\""
-	\ . ",caption %attrs align=\"\"-D"
-	\ . ",center"
-	\ . ",cite %attrs"
-	\ . ",code %attrs"
-	\ . ",col %attrs span=\"\" width=\"\" %cellhalign %cellvalign"
-	\ . ",colgroup %attrs span=\"\" width=\"\" %cellhalign %cellvalign"
-	\ . ",dd %attrs"
-	\ . ",del %attrs cite=\"\" datetime=\"\""
-	\ . ",dfn %attrs"
-	\ . ",dir %coreattrs"
-	\ . ",div %attrs"
-	\ . ",dl %attrs"
-	\ . ",dt %attrs"
-	\ . ",em %attrs"
-	\ . ",fieldset %attrs"
-	\ . ",font %coreattrs %i18n size=\"\"-D color-D=\"\" face-D=\"\""
-	\ . ",form %attrs action=\"\" method=\"\" enctype=\"\" accept=\"\" name=\"\" onsubmit=\"\" onreset=\"\" accept-charset=\"\""
-	\ . ",frame %coreattrs longdesc=\"\" name=\"\" src=\"\" frameborder=\"\" marginwidth=\"\" marginheight=\"\" noresize=\"\" scrolling=\"\""
-	\ . ",frameset %coreattrs rows=\"\" cols=\"\" onload=\"\" onunload=\"\""
-	\ . ",h1 %attrs"
-	\ . ",h2 %attrs"
-	\ . ",h3 %attrs"
-	\ . ",h4 %attrs"
-	\ . ",h5 %attrs"
-	\ . ",h6 %attrs"
-	\ . ",head %i18n profile=\"\""
-	\ . ",hr %attrs align=\"\"-D noshade-D=\"\" size-D=\"\" width-D=\"\""
-	\ . ",html %i18n cdata=\"\"-D"
-	\ . ",i %attrs"
-	\ . ",iframe %coreattrs longdesc=\"\" name=\"\" src=\"\" frameborder=\"\" marginwidth=\"\" marginheight=\"\" scrolling=\"\" align=\"\" height=\"\" width=\"\""
-	\ . ",img %attrs src=\"\" alt=\"\" longdesc=\"\" name=\"\" height=\"\" width=\"\" usemap=\"\" ismap=\"\" align=\"\"-D border-D=\"\" hspace-D=\"\" vspace-D=\"\""
-	\ . ",input %attrs type=\"\" name=\"\" value=\"\" checked=\"\" disabled=\"\" readonly=\"\" size=\"\" maxlength=\"\" src=\"\" alt=\"\" usemap=\"\" ismap=\"\" tabindex=\"\" accesskey=\"\" onfocus=\"\" onblur=\"\" onselect=\"\" onchange=\"\" accept=\"\" align=\"\"-D"
-	\ . ",ins %attrs cite=\"\" datetime=\"\""
-	\ . ",isindex %coreattrs %i18n"
-	\ . ",kbd %attrs"
-	\ . ",label %attrs for=\"\" accesskey=\"\" onfocus=\"\" onblur=\"\""
-	\ . ",legend %attrs accesskey=\"\" align=\"\"-D"
-	\ . ",li %attrs type=\"\"-D start-D=\"\" value-D=\"\" compact-D"
-	\ . ",link %attrs charset=\"\" href=\"\" hreflang=\"\" type=\"\" rel=\"\" rev=\"\" media=\"\" target=\"\""
-	\ . ",map %attrs name=\"\""
-	\ . ",menu %attrs"
-	\ . ",meta %i18n http-equiv=\"\" name=\"\" content=\"\" scheme=\"\""
-	\ . ",noframes %attrs"
-	\ . ",noscript %attrs"
-	\ . ",object %attrs declare=\"\" classid=\"\" codebase=\"\" data=\"\" type=\"\" codetype=\"\" archive=\"\" standby=\"\" height=\"\"-D width-D=\"\" usemap=\"\" name=\"\" tabindex=\"\" align-D=\"\" border-D=\"\" hspace-D=\"\" vspace-D=\"\""
-	\ . ",ol %attrs type=\"\"-D start-D=\"\" value-D=\"\" compact-D"
-	\ . ",optgroup %attrs disabled=\"\" label=\"\""
-	\ . ",option %attrs selected=\"\" disabled=\"\" label=\"\" value=\"\""
-	\ . ",p %attrs"
-	\ . ",param id=\"\" name=\"\" value=\"\" valuetype=\"\" type=\"\""
-	\ . ",pre %attrs width=\"\"-D"
-	\ . ",q %attrs cite=\"\""
-	\ . ",s %attrs"
-	\ . ",samp %attrs"
-	\ . ",script charset=\"\" type=\"\" src=\"\" defer=\"\" language=\"\"-D"
-	\ . ",select %attrs name=\"\" size=\"\" multiple=\"\" disabled=\"\" tabindex=\"\" onfocus=\"\" onblur=\"\" onchange=\"\""
-	\ . ",small %attrs"
-	\ . ",span %attrs"
-	\ . ",strike %attrs"
-	\ . ",strong %attrs"
-	\ . ",style %i18n type=\"\" media=\"\" title=\"\""
-	\ . ",sub %attrs"
-	\ . ",sup %attrs"
-	\ . ",table %attrs summary=\"\" width=\"\" border=\"\" frame=\"\" rules=\"\" cellspacing=\"\" cellpadding=\"\" align=\"\"-D"
-	\ . ",tbody %attrs %cellhalign %cellvalign"
-	\ . ",td %attrs abbr=\"\" axis=\"\" headers=\"\" scope=\"\" rowspan=\"\" colspan=\"\" %cellhalign %cellvalign nowrap=\"\"-D width-D=\"\" height-D=\"\" bgcolor-D=\"\""
-	\ . ",textarea %attrs name=\"\" rows=\"\" cols=\"\" disabled=\"\" readonly=\"\" tabindex=\"\" accesskey=\"\" onfocus=\"\" onblur=\"\" onselect=\"\" onchange=\"\""
-	\ . ",tfoot %attrs %cellhalign %cellvalign"
-	\ . ",th %attrs abbr=\"\" axis=\"\" headers=\"\" scope=\"\" rowspan=\"\" colspan=\"\" %cellhalign %cellvalign nowrap=\"\"-D width-D=\"\" height-D=\"\" bgcolor-D=\"\" align=\"\" valign=\"\" char=\"\" charoff=\"\" valign=\"\""
-	\ . ",thead %attrs %cellhalign %cellvalign"
-	\ . ",title %i18n"
-	\ . ",tr %attrs %cellhalign %cellvalign bgcolor=\"\"-D"
-	\ . ",tt %attrs"
-	\ . ",u %attrs"
-	\ . ",ul %attrs"
-	\ . ",var %attrs"
+let s:HTMLTags = "<a %attrs charset=\"\" target=\"\" type=\"\" name=\"\" href=\"\" hreflang=\"\" rel=\"\" rev=\"\" accesskey=\"\" shape=\"\" coords=\"\" tabindex=\"\" onfocus=\"\" onblur=\"\""
+	\ . ",<abbr %attrs"
+	\ . ",<acronym %attrs"
+	\ . ",<address %attrs"
+	\ . ",<applet %coreattrs alt=\"\" align-D=\"\"-D hspace-D=\"\" vspace-D=\"\" codebase-D=\"\" code-D=\"\" name-D=\"\" archive-D=\"\" object-D=\"\" width-D=\"\" height-D=\"\""
+	\ . ",<area %attrs shape=\"\" coords=\"\" nohref name=\"\" alt=\"\" href=\"\" tabindex=\"\" accesskey=\"\" onfocus=\"\" onblur=\"\" target=\"\""
+	\ . ",<b %attrs"
+	\ . ",<base href=\"\" target=\"\""
+	\ . ",<basefont size-D=\"\" color-D=\"\" face-D=\"\""
+	\ . ",<bdo %coreattrs lang=\"\" dir=\"\""
+	\ . ",<big %attrs"
+	\ . ",<blockquote %attrs cite=\"\""
+	\ . ",<body %attrs onload=\"\" onunload=\"\" background-D=\"\" bgcolor-D=\"\" text-D=\"\" link-D=\"\" vlink-D=\"\" alink-D=\"\""
+	\ . ",<br %coreattrs clear-D=\"\""
+	\ . ",<button %attrs name=\"\" value=\"\" type=\"\" disabled tabindex=\"\" accesskey=\"\" onfocus=\"\" onblur=\"\""
+	\ . ",<caption %attrs align-D=\"\""
+	\ . ",<center %attrs"
+	\ . ",<cite %attrs"
+	\ . ",<code %attrs"
+	\ . ",<col %attrs span=\"\" width=\"\" %cellhalign %cellvalign"
+	\ . ",<colgroup %attrs span=\"\" width=\"\" %cellhalign %cellvalign"
+	\ . ",<dd %attrs"
+	\ . ",<del %attrs cite=\"\" datetime=\"\""
+	\ . ",<dfn %attrs"
+	\ . ",<dir %attrs compact-D"
+	\ . ",<div %attrs align-D=\"\""
+	\ . ",<dl %attrs compact-D"
+	\ . ",<dt %attrs"
+	\ . ",<em %attrs"
+	\ . ",<fieldset %attrs"
+	\ . ",<font %coreattrs %i18n size-D=\"\"-D color-D=\"\" face-D=\"\""
+	\ . ",<form %attrs action=\"\" method=\"\" enctype=\"\" name=\"\" onsubmit=\"\" onreset=\"\" accept=\"\" accept-charset=\"\" target=\"\""
+	\ . ",<frame %coreattrs longdesc=\"\" name=\"\" src=\"\" frameborder=\"\" marginwidth=\"\" marginheight=\"\" noresize scrolling=\"\""
+	\ . ",<frameset %coreattrs rows=\"\" cols=\"\" onload=\"\" onunload=\"\""
+	\ . ",<h1 %attrs align-D=\"\""
+	\ . ",<h2 %attrs align-D=\"\""
+	\ . ",<h3 %attrs align-D=\"\""
+	\ . ",<h4 %attrs align-D=\"\""
+	\ . ",<h5 %attrs align-D=\"\""
+	\ . ",<h6 %attrs align-D=\"\""
+	\ . ",<head %i18n profile=\"\""
+	\ . ",<hr %attrs align-D=\"\" noshade-D size-D=\"\" width-D=\"\""
+	\ . ",<html %i18n version-D=\"\""
+	\ . ",<i %attrs"
+	\ . ",<iframe %coreattrs longdesc=\"\" name=\"\" src=\"\" frameborder=\"\" marginwidth=\"\" marginheight=\"\" scrolling=\"\" align-D=\"\" height=\"\" width=\"\""
+	\ . ",<img %attrs src=\"\" alt=\"\" longdesc=\"\" name=\"\" height=\"\" width=\"\" usemap=\"\" ismap align-D=\"\" border-D=\"\" hspace-D=\"\" vspace-D=\"\""
+	\ . ",<input %attrs type=\"\" name=\"\" value=\"\" checked disabled readonly size=\"\" maxlength=\"\" src=\"\" alt=\"\" usemap=\"\" ismap tabindex=\"\" accesskey=\"\" onfocus=\"\" onblur=\"\" onselect=\"\" onchange=\"\" accept=\"\" align-D=\"\""
+	\ . ",<ins %attrs cite=\"\" datetime=\"\""
+	\ . ",<isindex %coreattrs %i18n prompt-D=\"\""
+	\ . ",<kbd %attrs"
+	\ . ",<label %attrs for=\"\" accesskey=\"\" onfocus=\"\" onblur=\"\""
+	\ . ",<legend %attrs accesskey=\"\" align-D=\"\""
+	\ . ",<li %attrs type-D=\"\" value-D=\"\""
+	\ . ",<link %attrs charset=\"\" href=\"\" hreflang=\"\" type=\"\" rel=\"\" rev=\"\" media=\"\" target=\"\""
+	\ . ",<map %attrs name=\"\""
+	\ . ",<menu %attrs compact-D"
+	\ . ",<meta %i18n http-equiv=\"\" name=\"\" content=\"\" scheme=\"\""
+	\ . ",<noframes %attrs"
+	\ . ",<noscript %attrs"
+	\ . ",<object %attrs declare classid=\"\" codebase=\"\" data=\"\" type=\"\" codetype=\"\" archive=\"\" standby=\"\" height=\"\" width=\"\" usemap=\"\" name=\"\" tabindex=\"\" align-D=\"\" border-D=\"\" hspace-D=\"\" vspace-D=\"\""
+	\ . ",<ol %attrs type-D=\"\" start-D=\"\" compact-D"
+	\ . ",<optgroup %attrs disabled label=\"\""
+	\ . ",<option %attrs selected disabled label=\"\" value=\"\""
+	\ . ",<p %attrs align-D=\"\""
+	\ . ",<param id=\"\" name=\"\" value=\"\" valuetype=\"\" type=\"\""
+	\ . ",<pre %attrs width-D=\"\""
+	\ . ",<q %attrs cite=\"\""
+	\ . ",<s %attrs"
+	\ . ",<samp %attrs"
+	\ . ",<script charset=\"\" type=\"\" src=\"\" defer language-D=\"\""
+	\ . ",<select %attrs name=\"\" size=\"\" multiple disabled tabindex=\"\" onfocus=\"\" onblur=\"\" onchange=\"\""
+	\ . ",<small %attrs"
+	\ . ",<span %attrs"
+	\ . ",<strike %attrs"
+	\ . ",<strong %attrs"
+	\ . ",<style %i18n type=\"\" media=\"\" title=\"\""
+	\ . ",<sub %attrs"
+	\ . ",<sup %attrs"
+	\ . ",<table %attrs summary=\"\" width=\"\" border=\"\" frame=\"\" rules=\"\" cellspacing=\"\" cellpadding=\"\" align-D=\"\" bgcolor-D=\"\""
+	\ . ",<tbody %attrs %cellhalign %cellvalign"
+	\ . ",<td %attrs abbr=\"\" axis=\"\" headers=\"\" scope=\"\" rowspan=\"\" colspan=\"\" %cellhalign %cellvalign nowrap-D width-D=\"\" height-D=\"\" bgcolor-D=\"\""
+	\ . ",<textarea %attrs name=\"\" rows=\"\" cols=\"\" disabled readonly tabindex=\"\" accesskey=\"\" onfocus=\"\" onblur=\"\" onselect=\"\" onchange=\"\""
+	\ . ",<tfoot %attrs %cellhalign %cellvalign"
+	\ . ",<th %attrs abbr=\"\" axis=\"\" headers=\"\" scope=\"\" rowspan=\"\" colspan=\"\" %cellhalign %cellvalign nowrap-D width-D=\"\" height-D=\"\" bgcolor-D=\"\""
+	\ . ",<thead %attrs %cellhalign %cellvalign"
+	\ . ",<title %i18n"
+	\ . ",<tr %attrs %cellhalign %cellvalign bgcolor-D=\"\""
+	\ . ",<tt %attrs"
+	\ . ",<u %attrs"
+	\ . ",<ul %attrs type-D=\"\" compact-D"
+	\ . ",<var %attrs"
+let s:TagsAttributs = "align= left center right justify top middle bottom char"
+	\ . ",alink= Black Silver Gray White Maroon Red Purple Fuchsia Green Lime Olive Yellow Navy Blue Teal Aqua"
+	\ . ",bgcolor= Black Silver Gray White Maroon Red Purple Fuchsia Green Lime Olive Yellow Navy Blue Teal Aqua"
+	\ . ",charset= ISO-8859-1 SHIFT_JIS UTF-8"
+	\ . ",clear= none left right all"
+	\ . ",color= Black Silver Gray White Maroon Red Purple Fuchsia Green Lime Olive Yellow Navy Blue Teal Aqua"
+	\ . ",content= text/css"
+	\ . ",dir= ltr rtl"
+	\ . ",frameborder= 0 1"
+	\ . ",frame= void above below hsides lhs rhs vsides box border"
+	\ . ",hreflang= aa ab af am ar as ay az ba be bg bh bi bn bo br ca co cs cy da de dz el en eo es et eu fa fi fj fo fr fy ga gd gl gn gu ha he hi hr hu hy ia ie ik id is it iu ja jv ka kk kl km kn ko ks ku ky la ln lo lt lv mg mi mk ml mn mo mr ms mt my na ne nl no oc om or pa pl ps pt qu rm rn ro ru rw sa sd sg sh si sk sl sm sn so sq sr ss st su sv sw ta te tg th ti tk tl tn to tr ts tt tw ug uk ur uz vi vo wo xh yi yo za zh zu"
+	\ . ",http-equiv= Content-Type Expires PICS-Label Content-Script-Type Content-Style-Type"
+	\ . ",lang= aa ab af am ar as ay az ba be bg bh bi bn bo br ca co cs cy da de dz el en eo es et eu fa fi fj fo fr fy ga gd gl gn gu ha he hi hr hu hy ia ie ik id is it iu ja jv ka kk kl km kn ko ks ku ky la ln lo lt lv mg mi mk ml mn mo mr ms mt my na ne nl no oc om or pa pl ps pt qu rm rn ro ru rw sa sd sg sh si sk sl sm sn so sq sr ss st su sv sw ta te tg th ti tk tl tn to tr ts tt tw ug uk ur uz vi vo wo xh yi yo za zh zu"
+	\ . ",link= Black Silver Gray White Maroon Red Purple Fuchsia Green Lime Olive Yellow Navy Blue Teal Aqua"
+	\ . ",media= screen tty tv projection handheld print braille aural all"
+	\ . ",method= get post"
+	\ . ",name= Author copyright date keywords"
+	\ . ",rel= Made Alternate StyleSheet Start Next Prev Contents Index Glossary Copyright Chapter Section Subsection Appendix Help Bookmark"
+	\ . ",rev= Made Alternate StyleSheet Start Next Prev Contents Index Glossary Copyright Chapter Section Subsection Appendix Help Bookmark"
+	\ . ",rules= none groups rows cols all"
+	\ . ",scope= row col rowgroup colgroup"
+	\ . ",scrolling= yes no auto"
+	\ . ",shape= rect circle poly default"
+	\ . ",target= _blank _self _parent _top"
+	\ . ",text= Black Silver Gray White Maroon Red Purple Fuchsia Green Lime Olive Yellow Navy Blue Teal Aqua"
+	\ . ",type= disc square circle 1 a A i I text/html image/jpeg model/vrml video/quicktime application/java text/css text/javascript text password checkbox radio submit reset file hidden image button"
+	\ . ",valign= top middle bottom baseline"
+	\ . ",valuetype= data ref object"
+	\ . ",vlink= Black Silver Gray White Maroon Red Purple Fuchsia Green Lime Olive Yellow Navy Blue Teal Aqua"
 
 "**
 " List Functions:
@@ -265,7 +300,7 @@ function! LaunchEasyHtml()
 	" current word
 	if s:maxAttrLength == 0
 		echohl ErrorMsg
-		echo "No attributes for \"" . expand("<cword>") . "\""
+		echo "No attributes\\values found. (If it's a closing tag, try on opening tag.)"
 		echohl NONE
 		return
 	endif         
@@ -359,12 +394,28 @@ endfunction
 " Look for attributs for word under cursor. tr
 "**
 function! s:SearchAttributes()
+	" Ignore case
 	let l:CurrentCase = &ignorecase
 	set ignorecase
+	let l:CurrentIkw = &iskeyword
+	
 	let s:attributs = ""
 	let s:maxAttrLength = 0
 	let s:listSep = ","
-	let l:attributsLine = GetListMatchItem( s:HTMLTags, expand("<cword>") . ' ' )
+	
+	set iskeyword +=<
+	if match( expand("<cword>"), "^<" ) == 0 " Is it a tag ?
+		let s:itemtype = "T" " Yes, a tag
+		let l:attributsLine = GetListMatchItem( s:HTMLTags, expand("<cword>") . ' ' )
+	else
+		set iskeyword -=<
+		set iskeyword +==
+		if match( expand("<cword>"), "=$" ) " or an attribute ?
+			let s:itemtype = "A" " Yes, an attribute
+			let l:attributsLine = GetListMatchItem( s:TagsAttributs, expand("<cword>") . ' ' )
+		endif
+	endif
+
 	if l:attributsLine != ""
 		let s:listSep = " "
 		let l:attributsLine = RemoveListItem( l:attributsLine, 0 )
@@ -404,6 +455,7 @@ function! s:SearchAttributes()
 		endif
 	endif
 	let &ignorecase = l:CurrentCase
+	let &iskeyword = l:CurrentIkw
 endfunction
 
 "**
@@ -442,11 +494,16 @@ endfunction
 function! s:AddAttribute()
 	" Get attribute
 	let save_f=@f
-	let @f = " " . substitute( getline("."), "[ <>()X]", "", "g" )
+	let @f = substitute( getline("."), "[ <>()X]", "", "g" )
 	" Go to previous window
 	wincmd p
-	" Put attribute at end of tag
-	exec "normal f>\"fP"
+	" if it's a tag, put attribute at end of tag
+	if s:itemtype == "T"
+		let @f = ' ' . @f
+		exec 'normal f>"fP'
+	elseif s:itemtype == "A" " If it's an attribute, add value to it
+		exec 'normal f=l"fgp'
+	endif
 	startinsert
 	" Return to attributes window
 	wincmd p
