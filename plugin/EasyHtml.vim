@@ -1,7 +1,7 @@
 " File : EasyHtml.vim
 " Last Change: 2001 Dec 02
 " Maintainer: Gontran BAERTS <gbcreation@free.fr>
-" Version: 0.4
+" Version: 0.4.1
 "
 " Please don't hesitate to correct my english :)
 " Send corrections to <gbcreation@free.fr>
@@ -48,6 +48,10 @@
 "
 "-----------------------------------------------------------------------------
 " Updates:
+" in version 0.4.1
+" - Fix infinite loop to find window when easyhtml buffer is hidden. Thanks to
+"   Jonathon Merz who pointed out the bug and send me the patch.
+"
 " in version 0.4
 " - Added values for the "style" attribute (CSS2 properties)
 " - Added values for CSS2 properties
@@ -466,14 +470,15 @@ function! LaunchEasyHtml()
 		return
 	endif
 
-	" Is there an attributs list already running ?
+	" Is there an attributes list already running and is it in a window?
 	let BufNr = bufnr( '--\ EasyHtml\ --' )
-	if BufNr != -1
+	if BufNr != -1 && bufwinnr(BufNr) != -1
 		let CurBufNr = bufnr("%")
 		while CurBufNr != BufNr
 			wincmd w
 			let CurBufNr = bufnr("%")
 		endwhile
+	let BufNr = bufnr( '--\ EasyHtml\ --' )
 	else
 		" Save the user's settings for splitright
 		let savesplitright = &splitright
