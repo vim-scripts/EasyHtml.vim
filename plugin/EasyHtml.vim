@@ -1,7 +1,7 @@
 " File : EasyHtml.vim
-" Last Change: 2001 Dec 02
+" Last Change: 2002 Feb 18
 " Maintainer: Gontran BAERTS <gbcreation@free.fr>
-" Version: 0.4.1
+" Version: 0.5
 "
 " Please don't hesitate to correct my english :)
 " Send corrections to <gbcreation@free.fr>
@@ -18,36 +18,77 @@
 " source EasyHtml.vim
 "
 "-----------------------------------------------------------------------------
-" Usage: To display the attributes/values list, move the cursor on the
-" tag, attribute, or CSS property word and hit <F3> key.
-" Use :
+" Usage: Move the text cursor on the tag, attribute, or CSS property word
+" then :
+" 		- Press <F2> key to display attributes for the tag before/under the
+" 		cursor
+" 		- Press <F3> key to display values for the attribute before/under the
+" 		cursor
+" 		- Press <F4> ket to display values for the CSS Property befor/under
+" 		the cursor
+"
+"
+" In the EasyHtml buffer, use :
 "
 "       - h,j,k,l or <Left>,<Down>,<Up>,<Right> keys to change selected
 "         item.
-"       - <PageUp>/<PageDown> or <C-F>,<C-B> keys scroll list one page
+"       - <PageUp>/<PageDown> or <C-F>,<C-B> keys to scroll list one page
 "         downward/forward.
-"       - <Home> or <C-Home> select the first item.
-"       - <End> or <C-End> select the last item.
-"       - <ENTER> add selected item and exit from items list.
+"       - <Home> or <C-Home> to select the first item.
+"       - <End> or <C-End> to select the last item.
+"       - <ENTER> to add selected item WITHOUT exiting from items list.
+"       - <S-ENTER> to add selected item AND exit from items list.
 "       - q or <ESC> to exit without adding selected item.
 "
 " Deprecated attributes as declared by W3C are red highlighted, while right
 " attributes are blue highlighted.
 "
 " Set g:easyHtmlSplitRight variable to 0 or 1 to open items list at left
-" or right of current buffer. By default, use splitright setting.
+" or right of current window. By default, use splitright setting.
 "
-" Set g:eh_singlequote variable to 0 or 1 to use double or single quote when
-" adding attributes (For example id="" or id='')
+" Set g:eh_singlequote variable to 0 (default) or 1 to use double or single
+" quote when adding attributes (For example id="" or id='')
 "
-" Set g:eh_incsearch variable to 0 or 1 to dis- or en-able incremental list
-" search. This feature allows to select an item by typing its beginning. When
-" this is enable, 'q', 'h', 'j', 'k' and 'l' keys aren't used to exit from list
-" and to move highlighting. Use 'Q', '<Left>', '<Down>', '<Up>' and '<Right>'
-" instead.
+" Set g:eh_incsearch variable to 0 (default) or 1 to dis- or en-able
+" incremental list search. This feature allows to select an item by typing its
+" beginning. When this is enable, 'q', 'h', 'j', 'k' and 'l' keys aren't used
+" to exit from list and to move highlighting. Use 'Q', '<Left>', '<Down>',
+" '<Up>' and '<Right>' instead.
+"
+" Set g:eh_atfirstplace to 0 (default) or 1 to indicate if attributes must be
+" added at the end or at the beginning of the tag.
 "
 "-----------------------------------------------------------------------------
 " Updates:
+" in version 0.5
+" - Now use liblist.vim script to handle lists and genutils.vim script to
+"   handle windows (Thanks to Hari Krishna Dara for this script).
+"   Download them at
+"   http://vim.sourceforge.net/scripts/script.php?script_id=166
+"   and
+"   http://vim.sourceforge.net/scripts/script.php?script_id=197
+"   Make script smaller.
+" - Mapping changed !
+"   <F2> displays tag attributes
+"   <F3> displays attributes values
+"   <F4> displays CSS Properties values
+"   <ENTER> no longer close list after item addition. Use <S-ENTER> to add and
+"   exit from list.
+" - More user friendly : you no longer need to move cursor exactly on the
+"   keyword. Cursor may stay on '=', ':' or '"' signs just after keyword while
+"   hitting <F2>, <F3> or <F4> keys.
+"   For example,
+"   . Tags : <img
+"     Hitting <F2> key works while cursor is at '<' sign.
+"   . Attributes : style=""
+"     Hitting <F3> key works while cursor is at '=' or '"' signs.
+"   . CSS properties : background-color:;
+"     Hitting <F4> key works while cursor is at ':' or ';' signs.
+" - New g:eh_atfirstplace variable. See Usage section above.
+" - Fix modifiable setting again
+" - Fix syntax error for the "frame" attribute of <table> tag which causes
+"   "border" attribute to not been seen in attributes list.
+"
 " in version 0.4.1
 " - Fix infinite loop to find window when easyhtml buffer is hidden. Thanks to
 "   Jonathon Merz who pointed out the bug and send me the patch.
@@ -85,27 +126,50 @@
 " - Check for attributes list already opened, and reuse it
 "
 " in version 0.1
-" - First version " Has this already been loaded ?
+" - First version
 
+" Has this already been loaded ?
 if exists("loaded_easyhtml")
-       finish
-endif
+       fini
+en
 let loaded_easyhtml=1
 
 if !exists("g:easyHtmlSplitRight")
-	let g:easyHtmlSplitRight = &splitright
-endif
+	let g:easyHtmlSplitRight = &spr
+en
 
 if !exists("g:eh_incsearch")
 	let g:eh_incsearch = 0
-endif
+en
 
 if !exists("g:eh_singlequote")
 	let g:eh_singlequote = 0
-endif
+en
 
-:nmap <F3> :call LaunchEasyHtml()<cr>
-:imap <F3> <esc>:call LaunchEasyHtml()<cr>
+if !exists("g:eh_atfirstplace")
+	let g:eh_atfirstplace = 0
+en
+
+" **
+" Mappings:
+" **
+" Tag deletion
+nm d<F2> lF<df>
+" Attribut deletion
+nm d<F3> lF d2f"
+" Left move attribut
+nm <C-S-Left> d<F3>
+" Right move attribut
+nm <C-S-Right> d<F3>/ \\|><cr>:nohl<cr>P
+" Tag attributes list
+nm <F2> :cal LaunchEasyHtml('<')<cr>
+im <F2> <esc><F2>a
+" Attributes values list
+nm <F3> :cal LaunchEasyHtml('\s')<cr>
+im <F3> <esc><F3>a
+" Style attribut values list
+nm <F4> :cal LaunchEasyHtml('\(\s\\|"\\|;\)[a-zA-Z-]\+:')<cr>
+im <F4> <esc><F4>a
 
 "**
 " Script Variables:
@@ -113,6 +177,7 @@ endif
 let s:srch = ""
 let s:maxAttrLength = 0
 let s:currentPos = 2
+let s:itemAdded = 0
 " HTML tags and their attributs
 let s:coreattrs = "id=\"\" class=\"\" style=\"\" title=\"\""
 let s:i18n = "lang=\"\" dir=\"\""
@@ -198,7 +263,7 @@ let s:HTMLTags = "<a %attrs charset=\"\" target=\"\" type=\"\" name=\"\" href=\"
 	\ . ",<style %i18n type=\"\" media=\"\" title=\"\""
 	\ . ",<sub %attrs"
 	\ . ",<sup %attrs"
-	\ . ",<table %attrs summary=\"\" width=\"\" border=\"\" frame=\"\&quot; rules=\"\" cellspacing=\"\" cellpadding=\"\" align-D=\"\" bgcolor-D=\"\""
+	\ . ",<table %attrs summary=\"\" width=\"\" border=\"\" frame=\"\" rules=\"\" cellspacing=\"\" cellpadding=\"\" align-D=\"\" bgcolor-D=\"\""
 	\ . ",<tbody %attrs %cellhalign %cellvalign"
 	\ . ",<td %attrs abbr=\"\" axis=\"\" headers=\"\" scope=\"\" rowspan=\"\" colspan=\"\" %cellhalign %cellvalign nowrap-D width-D=\"\" height-D=\"\" bgcolor-D=\"\""
 	\ . ",<textarea %attrs name=\"\" rows=\"\" cols=\"\" disabled readonly tabindex=\"\" accesskey=\"\" onfocus=\"\" onblur=\"\" onselect=\"\" onchange=\"\""
@@ -376,236 +441,176 @@ let s:CSSProperties = "azimuth: %angle behind center center-left center-right fa
 	\ . "widows: inherit,"
 	\ . "width: auto inherit %length,"
 	\ . "word-spacing: inherit %length normal,"
-	\ . "z-index: auto inherit,"
-
-"**
-" List Functions:
-"**
-function! GetListItem( array, index )
-	if a:index == 0
-		return matchstr( a:array, '^[^' . s:listSep . ']\+' )
-	else
-		return matchstr( a:array, "[^" . s:listSep . "]\\+", matchend( a:array, '\(\%(^\|' . s:listSep . '\)[^' . s:listSep . ']\+\)\{' . a:index . '\}' . s:listSep ) )
-	endif
-endfunction
-
-function! GetListMatchItem( array, pattern )
-	return matchstr( a:array, '[^' . s:listSep . ']*' . a:pattern . '[^' . s:listSep . ']*' )
-endfunction
-
-function! ReplaceListItem( array, index, item )
-	if a:index == 0
-		return substitute( a:array, '^[^' .s:listSep. ']\+', a:item, "" )
-	else
-		return substitute( a:array, '\(\%(\%(^\|' . s:listSep . '\)[^' . s:listSep . ']\+\)\{' . a:index . '\}\)' . s:listSep . '[^' . s:listSep . ']\+', '\1' . s:listSep . a:item , "" )
-	endif
-endfunction
-
-function! RemoveListItem( array, index )
-	if a:index == 0
-		return substitute( a:array, '^[^' .s:listSep. ']\+\(' . s:listSep . '\|$\)', "", "" )
-	else
-		return substitute( a:array, '\(\%(\%(^\|' . s:listSep . '\)[^' . s:listSep . ']\+\)\{' . a:index . '\}\)' . s:listSep . '[^' . s:listSep . ']\+', '\1', "" )
-	endif
-endfunction
-
-function! GetListCount( array )
-	if a:array == "" | return 0 | endif
-	let pos = 0
-	let cnt = 0
-	while pos != -1
-		let pos = matchend( a:array, s:listSep, pos )
-		let cnt = cnt + 1
-	endwhile
-	return cnt
-endfunction
-
-function! QuickSortList( tabEnt, deb, fin )
-	let tabEnt = a:tabEnt
-	let pivot = GetListItem( tabEnt, a:deb )
-	let g = a:deb
-	let d = a:fin
-	while g < d
-		while GetListItem( tabEnt, d ) > pivot
-			let d = d - 1
-		endwhile
-		if g != d
-			let tabEnt = ReplaceListItem( tabEnt, g, GetListItem( tabEnt, d ) )
-			let tabEnt = ReplaceListItem( tabEnt, d, pivot )
-			let g = g + 1
-		endif
-
-		while GetListItem( tabEnt, g ) < pivot
-			let g = g + 1
-		endwhile
-		if g != d
-			let tabEnt = ReplaceListItem( tabEnt, d, GetListItem( tabEnt, g ) )
-			let tabEnt = ReplaceListItem( tabEnt, g, pivot )
-			let d = d - 1
-		endif
-	endwhile
-	if a:deb < g-1
-		let tabEnt = QuickSortList( tabEnt, a:deb, g-1 )
-	endif
-	if a:fin > g+1
-		let tabEnt = QuickSortList( tabEnt, g+1, a:fin )
-	endif
-	return tabEnt
-endfunction
+	\ . "z-index: auto inherit"
 
 "**
 " LaunchEasyHtml:
 " Search if there are attributs for word under cursor, and display them in a
 " new buffer.
 "**
-function! LaunchEasyHtml()
+fu! LaunchEasyHtml( pat )
+	" Save cursor position
+	let s:eh_curLine = line(".")
+	let s:eh_curCol  = virtcol(".")
+
+	" Search keyword
+	norm l
+	cal search(a:pat,"bW")
+
 	" Look for attributs for the current word
-	call s:SearchAttributes()
+	cal s:SearchAttributes()
 	" If the longest attribut length is 0, there is no attribut for the
 	" current word
 	if s:maxAttrLength == 0
-		echohl ErrorMsg
-		echo "No attributes\\values found. (If it's a closing tag, try on opening tag.)"
-		echohl NONE
-		return
-	endif
+		echoh ErrorMsg
+		ec "EasyHtml : No result found for ".expand("<cword>")."."
+		echoh NONE
+		exe s:eh_curLine
+		exe "norm ".s:eh_curCol."|"
+		retu
+	en
 
 	" Is there an attributes list already running and is it in a window?
 	let BufNr = bufnr( '--\ EasyHtml\ --' )
 	if BufNr != -1 && bufwinnr(BufNr) != -1
 		let CurBufNr = bufnr("%")
-		while CurBufNr != BufNr
-			wincmd w
+		wh CurBufNr != BufNr
+			winc w
 			let CurBufNr = bufnr("%")
-		endwhile
-	let BufNr = bufnr( '--\ EasyHtml\ --' )
-	else
+		endw
+		let BufNr = bufnr( '--\ EasyHtml\ --' )
+	el
 		" Save the user's settings for splitright
-		let savesplitright = &splitright
+		let savesplitright = &spr
 		" Configure vertical splitting side
-		let &splitright = g:easyHtmlSplitRight
+		let &spr = g:easyHtmlSplitRight
 		" Open new vertical window with right size
-		execute s:maxAttrLength . 'vnew --\ EasyHtml\ --'
+		"exe s:maxAttrLength . 'vnew --\ EasyHtml\ --'
+		if s:maxAttrLength < &wiw
+			let s:maxAttrLength = &wiw
+		en
+		exe s:maxAttrLength . 'vnew --\ EasyHtml\ --'
 		" Restore user settings
-		let &splitright = savesplitright
+		let &spr = savesplitright
 		" Turn off the swapfile, set the buffer type so that it won't get
 		" written, and so that it will get deleted when it gets hidden.
-		setlocal modifiable
-		setlocal noswapfile
-		setlocal buftype=nowrite
-		setlocal bufhidden=delete
-		setlocal nonumber
+		setl modifiable
+		setl noswapfile
+		setl buftype=nowrite
+		setl bufhidden=delete
+		setl nonumber
 		" Don't wrap around long lines
-		setlocal nowrap
+		setl nowrap
 		" No need for any insertmode abbreviations, since we don't allow
 		" insertions anyway!
 		iabc <buffer>
 		" Highlighting
-		syntax match selectedAttribut /^<.*>$/
-		syntax match deprecatedAttribut /^(.*)$/
-		syntax match hiddenX /X/
+		sy match selectedAttribut /^<.*>$/
+		sy match deprecatedAttribut /^(.*)$/
+		sy match hiddenX /X/
 		hi selectedAttribut guibg=lightblue guifg=black
 		hi deprecatedAttribut guibg=lightred guifg=black
 		let color= s:GetBgColor()
 		if color != ""
 			exe "hi hiddenX guibg=" . color . " guifg=" . color
-		endif
+		en
 
 		" Set up mappings for this buffer
-		nnoremap <buffer> <Left> :call <SID>MoveSelect( line(".")-1 )<CR>
-		nnoremap <buffer> <Up> :call <SID>MoveSelect( line(".")-1 )<CR>
-		nnoremap <buffer> <Right> :call <SID>MoveSelect( line(".")+1 )<CR>
-		nnoremap <buffer> <Down> :call <SID>MoveSelect( line(".")+1 )<CR>
-		nnoremap <buffer> <PageUp> :call <SID>PageUp()<cr>
-		nnoremap <buffer> <PageDown> :call <SID>PageDown()<cr>
-		nnoremap <buffer> <C-Home> :call <SID>MoveSelect( 1 )<cr>
-		nnoremap <buffer> <C-End> :call <SID>MoveSelect( line("$") )<cr>
-		nnoremap <buffer> <Home> :call <SID>MoveSelect( 1 )<cr>
-		nnoremap <buffer> <End> :call <SID>MoveSelect( line("$") )<cr>
-		nnoremap <buffer> <cr> :call <SID>AddItem()<cr>
-		nnoremap <buffer> <2-LeftMouse> :call <SID>AddItem()<cr>
-		nnoremap <buffer> <esc> :call <SID>CloseWindow()<cr>
+		nn <buffer> <Left> :cal <SID>MoveSelect( line(".")-1 )<CR>
+		nn <buffer> <Up> :cal <SID>MoveSelect( line(".")-1 )<CR>
+		nn <buffer> <Right> :cal <SID>MoveSelect( line(".")+1 )<CR>
+		nn <buffer> <Down> :cal <SID>MoveSelect( line(".")+1 )<CR>
+		nn <buffer> <PageUp> :cal <SID>PageUp()<cr>
+		nn <buffer> <PageDown> :cal <SID>PageDown()<cr>
+		nn <buffer> <C-Home> :cal <SID>MoveSelect( 1 )<cr>
+		nn <buffer> <C-End> :cal <SID>MoveSelect( line("$") )<cr>
+		nn <buffer> <Home> :cal <SID>MoveSelect( 1 )<cr>
+		nn <buffer> <End> :cal <SID>MoveSelect( line("$") )<cr>
+		nn <buffer> <cr> :cal <SID>AddItem()<cr>
+		nn <buffer> <S-cr> :cal <SID>AddItem() \| cal <SID>CloseWindow()<cr>
+		nn <buffer> <2-LeftMouse> :cal <SID>AddItem()<cr>
+		nn <buffer> <esc> :cal <SID>CloseWindow()<cr>
 
 		" If incremental search required, initialize it
 		if( g:eh_incsearch == 1 )
-			nnoremap <buffer> Q :call <SID>CloseWindow()<cr>
-			nnoremap <buffer> <BS> :call <SID>SelectSearch( "" )<cr>
+			nn <buffer> Q :cal <SID>CloseWindow()<cr>
+			nn <buffer> <BS> :cal <SID>SelectSearch( "" )<cr>
 			let char = 97
-			while char < 123
-				exe "nnoremap <buffer> " . nr2char(char) . " :call <SID>SelectSearch( '" . nr2char(char) . "' )<cr>"
+			wh char < 123
+				exe "nn <buffer> " . nr2char(char) . " :cal <SID>SelectSearch( '" . nr2char(char) . "' )<cr>"
 				let char = char + 1
-			endwhile
-		else
-			nnoremap <buffer> h :call <SID>MoveSelect( line(".")-1 )<CR>
-			nnoremap <buffer> k :call <SID>MoveSelect( line(".")-1 )<CR>
-			nnoremap <buffer> l :call <SID>MoveSelect( line(".")+1 )<CR>
-			nnoremap <buffer> j :call <SID>MoveSelect( line(".")+1 )<CR>
-			nnoremap <buffer> q :call <SID>CloseWindow()<cr>
-		endif
-	endif
+			endw
+		el
+			nn <buffer> h :cal <SID>MoveSelect( line(".")-1 )<CR>
+			nn <buffer> k :cal <SID>MoveSelect( line(".")-1 )<CR>
+			nn <buffer> l :cal <SID>MoveSelect( line(".")+1 )<CR>
+			nn <buffer> j :cal <SID>MoveSelect( line(".")+1 )<CR>
+			nn <buffer> q :cal <SID>CloseWindow()<cr>
+		en
+	en
 	" Reset incremental search
 	let s:srch = ""
 	" Fill attributs list
-	call s:ShowAttributes()
+	cal s:ShowAttributes()
 	" User don't need to modify content
-	setlocal nomodifiable
-endfunction
+	setl nomodifiable
+endf
 
 "**
 " SearchAttributes:
 " Look for attributs for word under cursor. tr
 "**
-function! s:SearchAttributes()
+fu! s:SearchAttributes()
 	" Ignore case
-	let l:CurrentCase = &ignorecase
+	let l:CurrentCase = &ic
 	set ignorecase
-	let l:CurrentIkw = &iskeyword
+	let l:CurrentIkw = &isk
 
 	let s:attributs = ""
 	let s:maxAttrLength = 0
-	let s:listSep = ","
+	let g:listSep = ","
 	let l:attributsLine = ""
 
-	setlocal iskeyword +=<
+	setl iskeyword +=<
 	if match( expand("<cword>"), '^<' ) == 0 " Is it a tag ?
 		let s:itemtype = "T" " Yes, a tag
 		let l:attributsLine = GetListMatchItem( s:HTMLTags, expand("<cword>") . ' ' )
-	else
-		setlocal iskeyword -=<
-		setlocal iskeyword +=-,=
+	el
+		setl iskeyword -=<
+		setl iskeyword +=-,=
 		if match( expand("<cword>"), '=$' ) != -1 " or an attribute ?
 			let s:itemtype = "A" " Yes, an attribute
 			let l:attributsLine = GetListMatchItem( s:TagsAttributs, expand("<cword>") . '" ' )
-		else
-			setlocal iskeyword -==
-			setlocal iskeyword +=:
+		el
+			setl iskeyword -==
+			setl iskeyword +=:
 			if match( expand("<cword>"), ':' ) != -1 " or a CSS property ?
 				let s:itemtype = "C" " Yes, a CSS property
 				let l:attributsLine = GetListMatchItem( s:CSSProperties, '\<' . matchstr( expand("<cword>"), '^.\{-}:' ) . ' ' )
-			endif
-		endif
-	endif
+			en
+		en
+	en
 
 	if l:attributsLine != ""
-		let s:listSep = " "
+		let g:listSep = " "
 		let l:attributsLine = RemoveListItem( l:attributsLine, 0 )
 		if l:attributsLine != ""
 			" Attributes values are already sorted and expanded
 			if s:itemtype != "A"
 				" Insert %xxxx variables content
 				let l:attribut = matchstr( l:attributsLine, '%[^ ]\+' )
-				while l:attribut != ""
+				wh l:attribut != ""
 					exe "let l:attributsLine = substitute( l:attributsLine, '" .l:attribut. "', s:" . strpart( l:attribut, 1 ) . ", '')"
 					let l:attribut = matchstr( l:attributsLine, '%[^ ]\+' )
-				endwhile                                 " Sort items
+				endw                                 " Sort items
 				let l:attributsLine = QuickSortList( l:attributsLine, 0, GetListCount(l:attributsLine)-1 )
-			endif
+			en
 			let l:attribut = GetListItem( l:attributsLine, 0 )
-			while l:attribut != ""
+			wh l:attribut != ""
 				" Keep max length
 				if s:maxAttrLength < strlen( l:attribut )
 					let s:maxAttrLength = strlen( l:attribut )
-				endif
+				en
 				" Remove current attribut
 				let l:attributsLine = RemoveListItem( l:attributsLine, 0 )
 				" Is it a depracated attribute ?
@@ -613,93 +618,96 @@ function! s:SearchAttributes()
 				if l:attribut =~ "-D"
 					let l:attribut = substitute( l:attribut, "-D", "", "")
 					let s:attributs = s:attributs . "X" . l:attribut . " \n"
-				else
+				el
 					let s:attributs = s:attributs . " " . l:attribut . " \n"
-				endif
+				en
 				" Next attribut
 				let l:attribut = GetListItem( l:attributsLine, 0 )
-			endwhile
-		endif
+			endw
+		en
 		" If longest attribute size is zero, then there is no attribute
 		" for this tag
 		if s:maxAttrLength != 0
 			let s:maxAttrLength = s:maxAttrLength + 2
-		endif
-	endif
-	let &iskeyword = l:CurrentIkw
-	let &ignorecase = l:CurrentCase
-endfunction
+		en
+	en
+	let &isk = l:CurrentIkw
+	let &ic = l:CurrentCase
+endf
 
 "**
 " ShowAttributes:
 " Display attributs list in current buffer.
 "**
-function! s:ShowAttributes()
+fu! s:ShowAttributes()
 	" Prevent a report of our actions from showing up
 	let oldRep=&report
 	let save_sc = &sc
 	set report=10000 nosc
-	setlocal modifiable
+	setl modifiable
 	" Erase content
 	%delete
 	" Put content of register f after the cursor
 	put! =s:attributs
 	" Erase last line
-	exe "normal G"
+	norm G
 	d
 	" Move to first item
-	call s:MoveSelect(1)
-	set nomodifiable
+	cal s:MoveSelect(1)
+	setl nomodifiable
 
 	" Restore config
 	let &report=oldRep
 	let &sc = save_sc
-endfunction
+endf
 
 "**
 " AddItem:
 " Add selected item to tag/attribute/CSS2 property.
 "**
-function! s:AddItem()
-	let l:CurrentCase = &ignorecase
+fu! s:AddItem()
+	" At least one item is added
+	let s:itemAdded = 1
+	let l:CurrentCase = &ic
 	set noignorecase
-	" Get attribute and clean it
+	" Get item and clean it
 	let save_f=@f
-	let @f = substitute( getline("."), '[<>X]', '', "g" )
-	let @f = substitute( @f, '^(', '', "g" )
-	let @f = substitute( @f, ' \+)$', '', "g" )
-	let @f = substitute( @f, ' ', '', "g" )
-	let &ignorecase = l:CurrentCase
+	let @f = substitute( getline("."), '[<>X() ]', '', "g" )
+	let &ic = l:CurrentCase
 	" Go to previous window
-	wincmd p
+	winc p
 	" if it's a tag, put attribute at end of tag
 	if s:itemtype == "T"
+		" User wants single quotes ?
 		if g:eh_singlequote == 1
 			let @f = substitute( @f , '"', "'", 'g' )
-		endif
+		en
 		let @f = ' ' . @f
-		exec 'normal f>"fP'
-	elseif s:itemtype == "A" " If it's an attribute ...
+		" Add attribute just after tag ?
+		if g:eh_atfirstplace == 1
+			cal search( ' \|>' )
+			norm "fP
+		el
+			norm f>"fP
+		en
+	elsei s:itemtype == "A" " If it's an attribute ...
 		if g:eh_singlequote == 0
 			let quote = '"'
-		else
+		el
 			let quote = "'"
-		endif
-		if expand("<cword>") !~ 'style' " ... append selected value to it for style
-			exec 'normal 2f' .quote. 'dT' .quote. '"fP'
-		else " ... or replace current value by selected value
-			exec 'normal f' .quote. '"fp'
-		endif
-	elseif s:itemtype == "C" " If it's an CSS property, add value to it
-		exec 'normal f:"fgp'
-	endif
-	startinsert
+		en
+		if expand("<cword>") !~ 'style' " ... replace current value by selected value
+			exec 'norm 2f' .quote. 'dT' .quote. '"fPB'
+		el " ... or append selected value to it for style
+			exec 'norm f' .quote. '"fp'
+		en
+	elsei s:itemtype == "C" " If it's an CSS property, add value to it
+		norm f:"fgp
+	en
 	" Return to attributes window
-	wincmd p
+	winc p
 	let @f=save_f
-	" Close window
-	call s:CloseWindow()
-endfunction
+endf
 
 "**
 " MoveSelect:
@@ -708,95 +716,106 @@ endfunction
 " Parameter:
 " newLineNumber line number to highlight.
 "**
-function! s:MoveSelect( newLineNumber )
+fu! s:MoveSelect( newLineNumber )
 	if( a:newLineNumber < 1 || a:newLineNumber > line("$") )
-		return
-	endif
-	setlocal modifiable
+		retu
+	en
+	setl modifiable
 	" Restore current line
 	if( exists("s:currentLine") )
-		call setline( ".", s:currentLine )
-	endif
+		cal setline( ".", s:currentLine )
+	en
 	" Go to new line
 	let s:currentPos = a:newLineNumber
-	exec s:currentPos
+	exe s:currentPos
 	" Save new current line
 	let s:currentLine = getline(".")
 	let modifiedLine = s:currentLine
 	" Complete string with spaces
 	let len = strlen(l:modifiedLine)
-	while len < s:maxAttrLength
+	wh len < s:maxAttrLength
 		let modifiedLine = modifiedLine . " "
 		let len = len + 1
-	endwhile
+	endw
 
 	" Is it a deprecated attribute marked with 'X' ?
 	if l:modifiedLine =~ "^X"
 		let modifiedLine = substitute( modifiedLine, "^X", "(", "" )
 		let modifiedLine = substitute( modifiedLine, " $", ")", "" )
-	else
+	el
 		let modifiedLine = substitute( modifiedLine, "^ ", "<", "" )
 		let modifiedLine = substitute( modifiedLine, " $", ">", "" )
-	endif
-	call setline( ".", l:modifiedLine )
-	setlocal nomodifiable
-endfunction
+	en
+	cal setline( ".", l:modifiedLine )
+	setl nomodifiable
+endf
 
 "**
 " PageDown:
 " Move highlight one page down.
 "**
-function! s:PageDown()
-	exe "normal L"
+fu! s:PageDown()
+	norm L
 	let pos = line(".")
-	exe "normal ''"
-	call s:MoveSelect( pos )
-	exe "normal zt"
-endfunction
+	norm ''
+	cal s:MoveSelect( pos )
+	norm zt
+endf
 
 "**
 " PageUp:
 " Move highlight one page up.
 "**
-function! s:PageUp()
-	exe "normal H"
+fu! s:PageUp()
+	norm H
 	let pos = line(".")
-	exe "normal ''"
-	call s:MoveSelect( pos )
-	exe "normal zb"
-endfunction
+	norm ''
+	cal s:MoveSelect( pos )
+	norm zb
+endf
 
 "**
 " CloseWindow:
 " Clear unused variables and highlights, reinit variables for next use and
 " close current window.
 "**
-function! s:CloseWindow()
-	unlet s:currentLine
-	unlet s:attributs
+fu! s:CloseWindow()
+	unl s:currentLine
+	unl s:attributs
 	let s:maxAttrLength = 0
 	let s:currentPos = 2
-	highlight clear selectedAttribut
-	highlight clear deprecatedAttribut
-	highlight clear hiddenX
-	wincmd q
-endfunction
+	hi clear selectedAttribut
+	hi clear deprecatedAttribut
+	hi clear hiddenX
+	setl modifiable
+	winc p
+	if s:itemAdded == 0
+		exe s:eh_curLine
+		echom s:eh_curLine
+		exe "norm ".s:eh_curCol."|"
+	el
+		let s:itemAdded = 0
+		startinsert
+	en
+	winc p
+	winc q
+endf
 
 "**
 " GetBgColor:
 " Try to get background color (may be not sure)
 "**
-function! s:GetBgColor()
+fu! s:GetBgColor()
 	let bgColor = synIDattr(synIDtrans(synID(1, 1, 1)), "bg")
 	if bgColor == ""
-		if &background == "light"
+		if &bg == "light"
 			let bgColor = "white"
-		else
+		el
 			let bgColor = "black"
-		endif
-	endif
-	return bgColor
-endfunction
+		en
+	en
+	retu bgColor
+endf
 
 "**
 " SelectSearch:
@@ -805,24 +824,24 @@ endfunction
 " Parameter:
 " Char  character to add to current search pattern
 "**
-function! s:SelectSearch( char )
+fu! s:SelectSearch( char )
 	if a:char == "" && s:srch != ""
 		let s:srch = strpart( s:srch, 0, strlen( s:srch )-1 )
-	else
+	el
 		let s:srch = s:srch . a:char
-	endif
+	en
 	let linenr = line(".")
 	if s:srch != ""
 		1
 		let findlinenr =  search( '\(\<\|X\)'.s:srch, "W" )
 		exe ":".linenr
 		if findlinenr != 0
-			echo "Attributs search : " . s:srch
-			call s:MoveSelect( findlinenr )
-		else
-			echohl ErrorMsg
-			echo "No attribut for \"" . s:srch . "\" (use backspace)"
-			echohl NONE
-		endif
-	endif
-endfunction
+			ec "Attributs search : " . s:srch
+			cal s:MoveSelect( findlinenr )
+		el
+			echoh ErrorMsg
+			ec "No attribut for \"" . s:srch . "\" (use backspace)"
+			echoh NONE
+		en
+	en
+endf
