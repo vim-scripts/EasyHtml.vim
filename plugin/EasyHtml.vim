@@ -34,6 +34,9 @@
 " 
 "-----------------------------------------------------------------------------
 " Updates:
+" in version 0.2.1
+" - Fix global modifiable setting instead of local
+"
 " in version 0.2
 " - Attributs list is now alphabetically sorted
 " - Hitting <F3> allows to display attributs list in Insert mode too
@@ -79,7 +82,7 @@ let s:events = "onclick=\"\" ondblclick=\"\" onmousedown=\"\" onmouseup=\"\" onm
 let s:cellhalign = "align=\"\" char=\"\" charoff=\"\""
 let s:cellvalign = "valign=\"\""
 let s:attrs = "%coreattrs %i18n %events"
-let s:HTMLTags = ",a %attrs charset=\"\" type=\"\" name=\"\" href=\"\" hreflang=\"\" rel=\"\" rev=\"\" accesskey=\"\" shape=\"\" coords=\"\" tabindex=\"\" onfocus=\"\" onblur=\"\""
+let s:HTMLTags = ",a %attrs charset=\"\" target=\"\" type=\"\" name=\"\" href=\"\" hreflang=\"\" rel=\"\" rev=\"\" accesskey=\"\" shape=\"\" coords=\"\" tabindex=\"\" onfocus=\"\" onblur=\"\""
 	\ . ",abbr %attrs"
 	\ . ",acronym %attrs"
 	\ . ",address %attrs"
@@ -131,7 +134,7 @@ let s:HTMLTags = ",a %attrs charset=\"\" type=\"\" name=\"\" href=\"\" hreflang=
 	\ . ",kbd %attrs"
 	\ . ",label %attrs for=\"\" accesskey=\"\" onfocus=\"\" onblur=\"\""
 	\ . ",legend %attrs accesskey=\"\" align=\"\"-D"
-	\ . ",li %attrs type=\"\"-D start-D=\"\" value-D=\"\" compact-D=\"\""
+	\ . ",li %attrs type=\"\"-D start-D=\"\" value-D=\"\" compact-D"
 	\ . ",link %attrs charset=\"\" href=\"\" hreflang=\"\" type=\"\" rel=\"\" rev=\"\" media=\"\" target=\"\""
 	\ . ",map %attrs name=\"\""
 	\ . ",menu %attrs"
@@ -139,7 +142,7 @@ let s:HTMLTags = ",a %attrs charset=\"\" type=\"\" name=\"\" href=\"\" hreflang=
 	\ . ",noframes %attrs"
 	\ . ",noscript %attrs"
 	\ . ",object %attrs declare=\"\" classid=\"\" codebase=\"\" data=\"\" type=\"\" codetype=\"\" archive=\"\" standby=\"\" height=\"\"-D width-D=\"\" usemap=\"\" name=\"\" tabindex=\"\" align-D=\"\" border-D=\"\" hspace-D=\"\" vspace-D=\"\""
-	\ . ",ol %attrs"
+	\ . ",ol %attrs type=\"\"-D start-D=\"\" value-D=\"\" compact-D"
 	\ . ",optgroup %attrs disabled=\"\" label=\"\""
 	\ . ",option %attrs selected=\"\" disabled=\"\" label=\"\" value=\"\""
 	\ . ",p %attrs"
@@ -413,7 +416,7 @@ function! s:ShowAttributes()
 	let save_sc = &sc
 	set report=10000 nosc
 
-	set modifiable
+	setlocal modifiable
 	" Erase content
 	%delete
 
@@ -464,7 +467,7 @@ function! s:MoveSelect( newLineNumber )
 		return
 	endif
 
-	set modifiable
+	setlocal modifiable
 
 	" Restore current line
 	if( exists("s:currentLine") )
@@ -496,7 +499,7 @@ function! s:MoveSelect( newLineNumber )
 		let l:modifiedLine = substitute( l:modifiedLine, " $", ">", "" )
 	endif
 	call setline( ".", l:modifiedLine )
-	set nomodifiable
+	setlocal nomodifiable
 endfunction
 
 "**
